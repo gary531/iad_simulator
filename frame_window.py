@@ -849,10 +849,6 @@ class frame_window(wxMDIParentFrame):
             self.OnCMD_save(event, frame)
 
     def OnCMD_backup(self, event):
-        #if backip dirtory isn't exist, create it
-        if not os.path.exists(self.bak_dir):
-            os.mkdir(self.bak_dir)
-
         #backup all testcase
         curr_time = util.get_curr_time()
         bak_path = self.bak_dir + "\\" + curr_time
@@ -1123,6 +1119,7 @@ class frame_window(wxMDIParentFrame):
         self.init_case_tree()
         self.init_msg_tree()
         self.init_device_tree()
+        self.init_dirtory()
 
         util.g_observer.publish(util.OB_EVT_INIT_FINISHED)
 
@@ -1473,4 +1470,16 @@ class frame_window(wxMDIParentFrame):
         self.tree.SetItemImage(node, 0, wxTreeItemIcon_Normal)
         self.tree.SetItemImage(node, 0, wxTreeItemIcon_Selected)
 
+    def init_dirtory(self):
+        #if case dirtory isn't exist, create it
+        if not os.path.exists(self.case_dir):
+            os.mkdir(self.case_dir)
+
+        #if rtp dirtory isn't exist, create it
+        if not os.path.exists(self.rtp_dir):
+            os.mkdir(self.rtp_dir)
+
+        #if backup dirtory isn't exist, create it
+        if not os.path.exists(self.bak_dir):
+            os.mkdir(self.bak_dir)
 
