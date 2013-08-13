@@ -213,6 +213,7 @@ class case_window(wxMDIChildFrame):
                     is_selfdef_msg = "0"
                 elif msg == self.selfdef_flag:
                     true_msg = self.selfdef_msg_disc[row]
+                    true_msg = util.endline_char2escape(true_msg)
                     is_selfdef_msg = "1"
                 else:
                     continue
@@ -408,6 +409,7 @@ class case_window(wxMDIChildFrame):
                                 self.case_grid.SetCellValue(row, 2, msg)
                         elif type == "1":
                             self.case_grid.SetCellValue(row, 2, self.selfdef_flag)
+                            msg = util.endline_escape2char(msg)
                             self.selfdef_msg_disc[row] = msg
                         self.case_grid.SetCellValue(row, 0, time)
                 #send_msg method
@@ -423,6 +425,7 @@ class case_window(wxMDIChildFrame):
                                 self.case_grid.SetCellValue(row, 2, msg)
                         elif type == "1":
                             self.case_grid.SetCellValue(row, 2, self.selfdef_flag)
+                            msg = util.endline_escape2char(msg)
                             self.selfdef_msg_disc[row] = msg
                         self.case_grid.SetCellValue(row, 0, "0")
                 #delay method

@@ -34,6 +34,11 @@ class communicator:
         self.sip_recv_msg_queue = None
         self.rtp_send_msg_queue = None
         self.rtp_recv_msg_queue = None
+        #the thread exit queue for sip and rtp
+        self.sip_send_exit_queue = None
+        self.sip_recv_exit_queue = None
+        self.rtp_send_exit_queue = None
+        self.rtp_recv_exit_queue = None
 
     def set_local_number(self, local_number=0):
         self.local_number = local_number
@@ -45,10 +50,10 @@ class communicator:
             if self.local_ip != local_ip or self.local_port != local_port:
                 try:
                     #send "exit" msg to running thread and let it quit
-                    if self.sip_send_msg_queue != None:
-                        self.sip_send_msg_queue.put("exit")
-                    if self.sip_recv_msg_queue != None:
-                        self.sip_recv_msg_queue.put("exit")
+                    if self.sip_send_exit_queue != None:
+                        self.sip_send_exit_queue.put("exit")
+                    if self.sip_recv_exit_queue != None:
+                        self.sip_recv_exit_queue.put("exit")
 
                     #close old sip socket
                     if self.sip_socket != None:
@@ -66,9 +71,13 @@ class communicator:
 
                     #create thread msg queue for sip
                     if self.sip_send_msg_queue == None:
-                        self.sip_send_msg_queue = Queue.Queue(1024)
+                        self.sip_send_msg_queue = Queue.Queue(64)
                     if self.sip_recv_msg_queue == None:
-                        self.sip_recv_msg_queue = Queue.Queue(1024)
+                        self.sip_recv_msg_queue = Queue.Queue(64)
+                    if self.sip_send_exit_queue == None:
+                        self.sip_send_exit_queue = Queue.Queue(64)
+                    if self.sip_recv_exit_queue == None:
+                        self.sip_recv_exit_queue = Queue.Queue(64)
 
                     thread.start_new_thread(self.t_sip_send_msg,())
                     thread.start_new_thread(self.t_sip_recv_msg,())
@@ -83,10 +92,10 @@ class communicator:
             if self.local_rtp_ip != local_rtp_ip or self.local_rtp_port != local_rtp_port:
                 try:
                     #send "exit" msg to running thread and let it quit
-                    if self.rtp_send_msg_queue != None:
-                        self.rtp_send_msg_queue.put("exit")
-                    if self.rtp_recv_msg_queue != None:
-                        self.rtp_recv_msg_queue.put("exit")
+                    if self.rtp_send_exit_queue != None:
+                        self.rtp_send_exit_queue.put("exit")
+                    if self.rtp_recv_exit_queue != None:
+                        self.rtp_recv_exit_queue.put("exit")
 
                     #close old rtp socket
                     if self.rtp_socket != None:
@@ -104,9 +113,13 @@ class communicator:
 
                     #create thread msg queue for rtp
                     if self.rtp_send_msg_queue == None:
-                        self.rtp_send_msg_queue = Queue.Queue(1024)
+                        self.rtp_send_msg_queue = Queue.Queue(64)
                     if self.rtp_recv_msg_queue == None:
-                        self.rtp_recv_msg_queue = Queue.Queue(1024)
+                        self.rtp_recv_msg_queue = Queue.Queue(64)
+                    if self.rtp_send_exit_queue == None:
+                        self.rtp_send_exit_queue = Queue.Queue(64)
+                    if self.rtp_recv_exit_queue == None:
+                        self.rtp_recv_exit_queue = Queue.Queue(64)
 
                     thread.start_new_thread(self.t_rtp_send_msg,())
                     thread.start_new_thread(self.t_rtp_recv_msg,())
@@ -134,9 +147,6 @@ class communicator:
             try:
                 data = self.sip_send_msg_queue.get_nowait()
 
-                if data == "exit":
-                    return
-
                 if self.remote_ip != "" and self.remote_port != 0:
                     remote_addr = (self.remote_ip, self.remote_port)
                     try:
@@ -145,6 +155,14 @@ class communicator:
                         traceback.print_exc()
                         util.TRACE("[%s.%s] socket send sip msg failure:\n%s\n"%(__name__, util.func(), data))
             except:
+                try:
+                    data = self.sip_send_exit_queue.get_nowait()
+
+                    if data == "exit":
+                        return
+                except:
+                    pass
+
                 time.sleep(0.01)
 
     def t_sip_recv_msg(self):
@@ -159,7 +177,7 @@ class communicator:
                     util.TRACE("[%s.%s] msg queue put failure!"%(__name__, util.func()))
             except:
                 try:
-                    data = self.sip_recv_msg_queue.get_nowait()
+                    data = self.sip_recv_exit_queue.get_nowait()
 
                     if data == "exit":
                         return
@@ -173,9 +191,6 @@ class communicator:
             try:
                 data = self.rtp_send_msg_queue.get_nowait()
 
-                if data == "exit":
-                    return
-
                 if self.remote_rtp_ip != "" and self.remote_rtp_port != 0:
                     remote_addr = (self.remote_rtp_ip, self.remote_rtp_port)
                     try:
@@ -184,6 +199,14 @@ class communicator:
                         traceback.print_exc()
                         util.TRACE("[%s.%s] socket send rtp msg failure:\n%s\n"%(__name__, util.func(), data))
             except:
+                try:
+                    data = self.rtp_send_exit_queue.get_nowait()
+
+                    if data == "exit":
+                        return
+                except:
+                    pass
+
                 time.sleep(0.005)
 
     def t_rtp_recv_msg(self):
@@ -192,7 +215,7 @@ class communicator:
                 data, addr = self.rtp_socket.recvfrom(1024)
             except:
                 try:
-                    data = self.rtp_recv_msg_queue.get_nowait()
+                    data = self.rtp_recv_exit_queue.get_nowait()
 
                     if data == "exit":
                         return
@@ -207,8 +230,8 @@ class communicator:
             raise UNEXCEPT_ERROR
             return
 
-        loop_num = wait_time / 0.01
         num = 0
+        loop_num = wait_time / 0.01
         err_str = TIMEOUT_ERROR
 
         while num < loop_num:
@@ -216,12 +239,12 @@ class communicator:
                 data = self.sip_recv_msg_queue.get_nowait()
                 if data != "":
                     ret = codec.g_codec.decode_msg(data, type, msg)
-                    if ret == 1:
+                    if ret == 1 or ret == 3 or ret == 4:
                         err_str = UNEXCEPT_ERROR
                         break
-                    elif ret > 1:
+                    elif ret == 2 or ret == 5:
                         err_str = VALUE_ERROR
-                        break
+                        continue
                     else:
                         err_str = ""
                         break
@@ -262,14 +285,29 @@ class communicator:
         rtp_packet_lst = codec.g_rtp.parse_file(file)
         for rtp_packet in rtp_packet_lst:
             self.rtp_send_msg_queue.put(rtp_packet)
-            #the packet be sent in every 20 ms
-            time.sleep(0.02)
+            #the packet be sent in every 30 ms
+            time.sleep(0.03)
 
     def send_recv_rtp(self, file=""):
         try:
-            send_rtp(file)
+            self.send_rtp(file)
         except:
             raise
+
+    def clear_env(self):
+        #clear the sip recv msg queue leaved by last testcase
+        while 1:
+            try:
+                data = self.sip_recv_msg_queue.get_nowait()
+            except:
+                break;
+
+        #clear the rtp recv msg queue leaved by last testcase
+        while 1:
+            try:
+                data = self.rtp_recv_msg_queue.get_nowait()
+            except:
+                break;
 
 
 iad = communicator()

@@ -849,6 +849,10 @@ class frame_window(wxMDIParentFrame):
             self.OnCMD_save(event, frame)
 
     def OnCMD_backup(self, event):
+        #if backip dirtory isn't exist, create it
+        if not os.path.exists(self.bak_dir):
+            os.mkdir(self.bak_dir)
+
         #backup all testcase
         curr_time = util.get_curr_time()
         bak_path = self.bak_dir + "\\" + curr_time
@@ -942,6 +946,8 @@ class frame_window(wxMDIParentFrame):
                 if os.access(del_script_path, os.W_OK) != 1:
                     os.chmod(del_script_path, stat.S_IWRITE)
                 os.remove(del_script_path)
+                self.OnUtil_clear_frame(label, 1)
+                util.g_observer.publish(util.OB_EVT_WINDOWS_CLOSE)
             #if msg tree node is delete
             elif parent_label == self.msg_root_label:
                 self.tree.Delete(node)
@@ -950,6 +956,8 @@ class frame_window(wxMDIParentFrame):
                 win32file.CopyFile(cfg_file_path, cfg_file_path + ".bak", False)
                 util.del_msg_tpl(label)
                 self.update_msg_tpl()
+                self.OnUtil_clear_frame(label, 1)
+                util.g_observer.publish(util.OB_EVT_WINDOWS_CLOSE)
 
     def OnCMD_rename(self, event):
         #get node that already selected
@@ -975,13 +983,19 @@ class frame_window(wxMDIParentFrame):
                 runner.g_runner.run_script(pyfile)
                 return
 
-    def OnUtil_clear_frame(self, label):
-        #delete the frame handler
+    def OnUtil_clear_frame(self, label, destory=0):
+        #delete the frame handler and frame
         if self.case_frame.has_key(label):
+            if destory == 1:
+                self.case_frame[label].Destroy()
             del self.case_frame[label]
         elif self.msg_frame.has_key(label):
+            if destory == 1:
+                self.msg_frame[label].Destroy()
             del self.msg_frame[label]
         elif self.device_name == label:
+            if destory == 1:
+                self.device_frame.Destroy()
             self.device_frame = None
 
     def OnUtil_find_usable_seq(self, node=None, rule=""):
@@ -1227,6 +1241,8 @@ class frame_window(wxMDIParentFrame):
             if found == False:
                 self.File.Enable(wxID_FRAME_WINDOWFILEITEM_CLOSE, False)
                 self.File.Enable(wxID_FRAME_WINDOWFILEITEM_CLOSE_ALL, False)
+                self.File.Enable(wxID_FRAME_WINDOWFILEITEM_SAVE, False)
+                self.File.Enable(wxID_FRAME_WINDOWFILEITEM_SAVE_ALL, False)
             return
         #one sub frame have been changed
         elif event == util.OB_EVT_WINDOWS_CHANGED:
@@ -1329,6 +1345,8 @@ class frame_window(wxMDIParentFrame):
             if found == False:
                 self.tool_bar.EnableTool(wxID_FRAME_WINDOWTOOL_BARTOOL_CLOSE, False)
                 self.tool_bar.EnableTool(wxID_FRAME_WINDOWTOOL_BARTOOL_CLOSE_ALL, False)
+                self.tool_bar.EnableTool(wxID_FRAME_WINDOWTOOL_BARTOOL_SAVE, False)
+                self.tool_bar.EnableTool(wxID_FRAME_WINDOWTOOL_BARTOOL_SAVE_ALL, False)
             return
         #one sub frame have been changed
         elif event == util.OB_EVT_WINDOWS_CHANGED:

@@ -17,6 +17,9 @@ class runner:
         thread.start_new_thread(self.running,(name, ))
 
     def running(self, name=""):
+        #first, clear the running environment
+        com.iad.clear_env()
+
         try:
             execfile(name)
             util.TRACE("[%s.%s] testcase: %s run success"%(__name__, util.func(), name))

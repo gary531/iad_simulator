@@ -10,8 +10,9 @@ class codec:
         #template msg disc
         self.msg_disc = {}
 
-        #the msg line list in the lastest received msg
-        self.last_msg = []
+        #the msg line list in the lastest send and recv msg
+        self.last_send_msg = []
+        self.last_recv_msg = []
 
     def encode_msg(self, msg_type=0, msg_tpl=""):
         if msg_type > 1 or msg_tpl == "":
@@ -19,6 +20,10 @@ class codec:
             return ""
 
         msg = ""
+        tmp_str1 = ""
+        tmp_str2 = ""
+        tmp_str3 = ""
+        true_key = ""
 
         #if msg_type=0, use template msg; if msg_type==1, use self defined msg
         if msg_type == 0:
@@ -40,6 +45,7 @@ class codec:
                 idx2 = string.find(msg, ']', idx1+1)
                 if idx2 != -1 and idx2-idx1 > 1:
                     key = msg[idx1+1:idx2]
+
                     #replace device key word
                     if key == "local_ip":
                         msg = string.replace(msg, '['+key+']', com.iad.local_ip)
@@ -59,34 +65,80 @@ class codec:
                         msg = string.replace(msg, '['+key+']', com.iad.remote_rtp_ip)
                     elif key == "remote_rtp_port":
                         msg = string.replace(msg, '['+key+']', str(com.iad.remote_rtp_port))
-                    #anylse if seq param included in the msg key word, such as:[Route:,2]
-                    bk_key = key
+
+                    #anylse key word param, param1 is replace offset, param2 is replace msg seq, 
+                    #param3 is replace from send msg, such as:[Via:;;;1]
+                    tmp_str1 = ""
+                    tmp_str2 = ""
+                    tmp_str3 = ""
+                    true_key = key
+                    i1 = string.find(key, ';', 0)
+                    if i1 != -1:
+                        true_key = key[:i1]
+                        i2 = string.find(key[i1+1:], ';', 0)
+                        if i2 != -1:
+                            i3 = string.find(key[i1+1+i2+1:], ';', 0)
+                            if i3 != -1:
+                                tmp_str3 = key[i1+1+i2+1+i3+1:]
+                                tmp_str2 = key[i1+1+i2+1:i1+1+i2+1+i3]
+                            else:
+                                tmp_str2 = key[i1+1+i2+1:]
+                            tmp_str1 = key[i1+1:i1+1+i2]
+                        else:
+                            tmp_str1 = key[i1+1:]
+
+                    replace_offset = 0
                     replace_num = 1
-                    idx3 = string.find(bk_key, ',', 0)
-                    if idx3 != -1:
-                        replace_num = bk_key[idx3+1:]
+                    from_send_msg = 0
+                    if len(tmp_str1) != 0:
+                        replace_offset = eval(tmp_str1)
+                        if replace_offset < 1:
+                            util.TRACE("[%s.%s] key [%s] has a wrong place offset param!"%\
+                                (__name__, util.func(), key))
+                            replace_offset = 0
+                    if len(tmp_str2) != 0:
+                        replace_num = eval(tmp_str2)
                         if replace_num < 1:
-                            util.TRACE("[%s.%s] key [%s] has a wrong replace num param!"%(__name__, util.func(), bk_key))
+                            util.TRACE("[%s.%s] key [%s] has a wrong replace num param!"%\
+                                (__name__, util.func(), key))
                             replace_num = 1
-                        key = bk_key[:idx3]
+                    if len(tmp_str3) != 0:
+                        from_send_msg = eval(tmp_str3)
+                        if from_send_msg < 1:
+                            util.TRACE("[%s.%s] key [%s] has a wrong replace from send msg param!"%\
+                                (__name__, util.func(), key))
+                            from_send_msg = 0
+
                     #replace msg key word
                     num = 0
-                    for line in self.last_msg:
-                        idx4 = string.find(line, key, 0)
+                    if from_send_msg == 0:
+                        msg_lst = self.last_recv_msg
+                    else:
+                        msg_lst = self.last_send_msg
+                    for line in msg_lst:
+                        idx4 = string.find(line, true_key, 0)
                         if idx4 != -1:
                             num = num + 1
                             if num == replace_num:
-                                msg = string.replace(msg, '['+bk_key+']', line[idx4:])
+                                msg = string.replace(msg, '['+key+']', line[idx4+replace_offset:])
                                 break
+
                     #replace random key word
                     if key == "random":
                         msg = string.replace(msg, '['+key+']', util.general_random())
+
                     #continue to find another key word
                     start = idx1+1
                 else:
                     break
             else:
                 break
+
+        #add "\r\n" to end message
+        if msg.find("\r\n\r\n") == -1:
+            msg = msg + "\r\n"
+
+        self.last_send_msg = string.split(msg, "\r\n")
 
         return msg
 
@@ -96,16 +148,16 @@ class codec:
             return 1
 
         #parse msg into line list format
-        recv_msg_lst = string.split(recv_msg, '\n')
+        recv_msg_lst = string.split(recv_msg, "\n")
         if len(recv_msg_lst) == 0:
-            util.TRACE("[%s.%s] recv msg format error!"%(__name__, util.func()))
+            util.TRACE("[%s.%s] recv msg format error!\n%s"%(__name__, util.func(), recv_msg))
             return 2
 
         #strip the space or '\r' before every line and after
         recv_msg_lst2 = []
         for line in recv_msg_lst:
             line.strip()
-            if len(line) >= 1 and line[-1] == '\r':
+            if len(line) >= 1 and line[-1] == "\r":
                 recv_msg_lst2.append(line[:-1])
             else:
                 recv_msg_lst2.append(line)
@@ -119,15 +171,15 @@ class codec:
                 return 3
         elif msg_type == 1:
             #parse template msg into line list format
-            match_msg_lst = string.split(msg_tpl, '\n')
+            match_msg_lst = string.split(msg_tpl, "\n")
             if len(match_msg_lst) == 0:
-                util.TRACE("[%s.%s] match msg format error!"%(__name__, util.func()))
+                util.TRACE("[%s.%s] match msg format error!\n%s"%(__name__, util.func(), msg_tpl))
                 return 4
             #strip the space or '\r' before every line and after
             match_msg_lst2 = []
             for line in match_msg_lst:
                 line.strip()
-                if len(line) >= 1 and line[-1] == '\r':
+                if len(line) >= 1 and line[-1] == "\r":
                     match_msg_lst2.append(line[:-1])
                 match_msg_lst2.append(line)
 
@@ -139,10 +191,11 @@ class codec:
                     found = 1
                     break
             if found == 0:
-                util.TRACE("[%s.%s] msg parse failure!"%(__name__, util.func()))
+                util.TRACE("[%s.%s] msg match failure!\n%s"%(__name__, util.func(), recv_msg))
                 return 5
 
-        self.last_msg = recv_msg_lst2
+        self.last_recv_msg = recv_msg_lst2
+
         return 0
 
     def set_msg_disc(self, msg_disc={}):

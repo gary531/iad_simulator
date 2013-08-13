@@ -295,6 +295,32 @@ def copy_dir(src="", dst=""):
         if os.path.isfile(src_file_path):
             win32file.CopyFile(src_file_path, dst_file_path, True)
 
+def endline_char2escape(raw_str=""):
+    if raw_str == "":
+        TRACE("[%s] input param is incorrect!"%func())
+        return ""
+
+    ret_str = ""
+    line_lst = string.split(raw_str, "\n")
+
+    for line in line_lst:
+        ret_str = ret_str + line + "\\r\\n"
+
+    return ret_str
+
+def endline_escape2char(raw_str=""):
+    if raw_str == "":
+        TRACE("[%s] input param is incorrect!"%func())
+        return ""
+
+    ret_str = ""
+    line_lst = string.split(raw_str, "\\r\\n")
+
+    for line in line_lst:
+        ret_str = ret_str + line + "\n"
+
+    return ret_str
+
 class observer:
     def __init__(self):
         self.observer_disc = {}

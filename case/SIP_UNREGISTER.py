@@ -1,0 +1,2 @@
+com.iad.send_msg(1,'REGISTER sip:[remote_ip]:[remote_port] SIP/2.0\r\nVia: SIP/2.0/UDP [local_ip]:[local_port];branch=z9hG4bK[random]\r\nFrom: sip:[remote_number]@[remote_ip]:[remote_port];tag=[random]\r\nTo: sip:[remote_number]@[remote_ip]:[remote_port]\r\nCall-ID: [local_ip]:[local_port]_[random]\r\nCseq: 1 REGISTER\r\nContact: sip:[local_number]@[local_ip]:[local_port]\r\nExpires: 0\r\nMax-Forwards: 70\r\nContent-Length: 0\r\n')
+com.iad.wait_msg(0,'recv_200',5)
