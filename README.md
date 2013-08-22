@@ -1,8 +1,8 @@
 Introduce
 =====
-The project is iad simulator tool writed by python, it play a sip terminal role.<br/>
-This tool can manage a series of testcase files, and some message template. you also config some network parameters through your running environment.<br/>
-For every testcase, you can define every test step, a series of test step contruct a full testcase. For every test step, you can select send message or wait messsage, that you can select message template or self defined message.<br/>
+The project is iad simulator tool writed by python, it play a sip terminal role, it's a GUI tool in window PC.<br/>
+This tool can manage a series of testcase and some message templates, you can add/delete/edit them. you also config some network parameters according to your running environment.<br/>
+For every testcase, you can edit every test step, a series of test steps contruct a full testcase. For every test step, you can select send message or wait messsage, and you can select message template or self defined message.<br/>
 
 Directory
 =====
