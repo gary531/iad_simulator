@@ -12,13 +12,13 @@ rtp - rtp capture packet<br/>
 
 Environment
 =====
-you should install these two support packets in your PC:<br/>
+You should install these two support packets in your PC:<br/>
 wxPythonWIN32-2.4.2.4-Py23.exe<br/>
 ActivePython-2.3.4-233-win32-ix86.msi<br/>
 
-you can download the packets in the following link:<br/>
+You can download the packets in the following link:<br/>
 http://yunpan.cn/QXuNZyvzxSLjY<br/>
 
 Run
 =====
-double click "iad_simulater.py" to start this tool<br/>
+Double click "iad_simulater.py" to start this tool<br/>
