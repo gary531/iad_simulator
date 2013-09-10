@@ -40,6 +40,9 @@ class communicator:
         self.rtp_send_exit_queue = None
         self.rtp_recv_exit_queue = None
 
+        #the max socket recv buffer size
+        self.max_recv_size = 2048
+
     def set_local_number(self, local_number=0):
         self.local_number = local_number
 
@@ -62,6 +65,7 @@ class communicator:
                     sip_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     local_addr = (local_ip, local_port)
                     sip_socket.bind(local_addr)
+                    #set the socket to unblock mode
                     sip_socket.setblocking(0)
                     util.TRACE("[%s.%s] create sip socket %s:%d succ"%(__name__, util.func(), local_ip, local_port))
 
@@ -168,7 +172,7 @@ class communicator:
     def t_sip_recv_msg(self):
         while 1:
             try:
-                data, addr = self.sip_socket.recvfrom(1024)
+                data, addr = self.sip_socket.recvfrom(self.max_recv_size)
 
                 try:
                     self.sip_recv_msg_queue.put(data)
@@ -212,7 +216,7 @@ class communicator:
     def t_rtp_recv_msg(self):
         while 1:
             try:
-                data, addr = self.rtp_socket.recvfrom(1024)
+                data, addr = self.rtp_socket.recvfrom(self.max_recv_size)
             except:
                 try:
                     data = self.rtp_recv_exit_queue.get_nowait()

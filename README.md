@@ -15,6 +15,7 @@ Environment
 You should install these two support packets in your PC:<br/>
 wxPythonWIN32-2.4.2.4-Py23.exe<br/>
 ActivePython-2.3.4-233-win32-ix86.msi<br/>
+cjkcodecs-1.0.3.win32-py2.3.exe<br/>
 
 You can download the packets in the following link:<br/>
 http://yunpan.cn/QXuNZyvzxSLjY<br/>
