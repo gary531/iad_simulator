@@ -19,6 +19,7 @@ cjkcodecs-1.0.3.win32-py2.3.exe<br/>
 
 You can download the packets in the following link:<br/>
 http://yunpan.cn/QXuNZyvzxSLjY<br/>
+password:b418</br>
 
 Run
 =====
